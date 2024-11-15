@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { db } from '../../firebase'; // Import your Firebase instance
-import { collection, onSnapshot, addDoc, orderBy, query } from "firebase/firestore"; // Add necessary imports
+import { db } from '../../firebase'; 
+import { collection, onSnapshot, addDoc, orderBy, query } from "firebase/firestore"; 
 
 const Chatroom = () => {
   const [messages, setMessages] = useState([]);
@@ -8,47 +8,41 @@ const Chatroom = () => {
   const username = localStorage.getItem("username");
   const name = localStorage.getItem("name") || "Anonymous";
   
-  // Reference for the messages container to scroll to the bottom
   const messagesEndRef = useRef(null);
 
-  // Fetch messages from Firestore in real-time and order by timestamp
   useEffect(() => {
-    const messagesRef = collection(db, "messages"); // Messages collection in Firestore
-    const q = query(messagesRef, orderBy("id", "asc")); // Order messages by id (ascending)
+    const messagesRef = collection(db, "messages"); 
+    const q = query(messagesRef, orderBy("id", "asc")); 
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const newMessages = snapshot.docs.map(doc => doc.data());
-      setMessages(newMessages); // Update the state with new messages
+      setMessages(newMessages); 
     });
 
-    // Clean up the listener when the component unmounts
     return () => unsubscribe();
   }, []);
 
-  // Function to send a new message
   const sendMessage = async (e) => {
     e.preventDefault();
     if (newMessage.trim() === '') return;
 
     const message = {
-      id: Date.now(), // Unique message id (use Firestore auto-generated id in production)
-      username, // Store the email as the identifier
-      name, // Store the user's display name
+      id: Date.now(),
+      username, 
+      name,
       text: newMessage,
     };
 
     try {
-      // Save the message to Firestore
       const messagesRef = collection(db, "messages");
-      await addDoc(messagesRef, message); // This will add the new message to Firestore
+      await addDoc(messagesRef, message); 
 
-      setNewMessage(''); // Clear the input field after sending
+      setNewMessage(''); 
     } catch (error) {
       console.error("Error sending message: ", error);
     }
   };
 
-  // Scroll to the bottom when messages are updated
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -62,13 +56,16 @@ const Chatroom = () => {
       </div>
 
       <div className="messages" style={{ maxHeight: "400px", overflowY: "auto" }}>
-        {messages.map((msg) => (
+        {messages
+        .filter((msg) => msg.username === username)
+        .map((msg) => (
           <div key={msg.id} className="message">
             <strong>{msg.name} ({msg.username}):</strong> {msg.text}
           </div>
         ))}
-        <div ref={messagesEndRef} /> {/* This will scroll to the bottom */}
+        <div ref={messagesEndRef} />
       </div>
+
 
       <form onSubmit={sendMessage} className="flex items-center gap-2">
         <input
