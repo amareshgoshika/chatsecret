@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import Chatroom from "../Chatroom/Chatroom";
 import { db } from '../../firebase'; // Import Firestore instance
 import { collection, addDoc } from "firebase/firestore"; // Firestore methods for adding data
+import { query, where, getDocs } from "firebase/firestore";
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -25,17 +26,22 @@ const Login = () => {
     }
 
     try {
-      // Add user data to Firestore
-      await addDoc(usersRef, {
-        username: email,
-        password: password,
-        name: name,
-      });
-      
-      // Redirect to the Chatroom page after successful registration
-      navigate("/Chatroom");
+      const q = query(usersRef, where("username", "==", email), where("password", "==", password));
+      const querySnapshot = await getDocs(q);
+  
+      if (!querySnapshot.empty) {
+        querySnapshot.forEach((doc) => {
+          const user = doc.data();
+          localStorage.setItem("username", email); // Store username
+          localStorage.setItem("name", name); // Store the name corresponding to the user
+        });
+  
+        navigate("/Chatroom");
+      } else {
+        alert("Invalid username or password.");
+      }
     } catch (error) {
-      console.error("Error adding document: ", error);
+      console.error("Error logging in: ", error);
     }
   };
 
@@ -63,14 +69,21 @@ const Login = () => {
               type="email"
               placeholder="Username"
               value={email}
-              onChange={(e) => setEmail(e.target.value)} // Bind email input (username)
+              onChange={(e) => setEmail(e.target.value)} 
             />
             <input
               className="px-3 shadow-[0_0_16px_0px_rgba(0,0,0,0.1)] p-2 rounded-lg w-full"
               type="password"
               placeholder="Password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)} // Bind password input
+              onChange={(e) => setPassword(e.target.value)}
+              />
+            <input
+              className="px-3 shadow-[0_0_16px_0px_rgba(0,0,0,0.1)] p-2 rounded-lg w-full"
+              type="name"
+              placeholder="Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)} 
             />
             <button
               className="bg-blue-500 w-full text-white font-semibold p-2 rounded-lg flex items-center justify-center space-x-1"
